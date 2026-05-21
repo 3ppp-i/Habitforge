@@ -2029,6 +2029,64 @@ window.addEventListener('load', () => {
       document.body.appendChild(el);
     }, 3000);
   }
+  // Add ESC key listener to close panels
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      // Check if any panel is open and close it
+      const openPanels = document.querySelectorAll('.panel-overlay.open');
+      openPanels.forEach(panel => {
+        panel.classList.remove('open');
+      });
+    }
+  });
+
+  // Add drag-to-close functionality for panels
+  let dragStartY = null;
+  let isDragging = null;
+
+  window.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.panel-overlay.open')) {
+      const panel = e.target.closest('.panel-overlay.open');
+      dragStartY = e.touches[0].clientY;
+      isDragging = panel;
+      panel.style.transition = 'transform 0.1s ease-out';
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!isDragging || !dragStartY) return;
+
+    const touchY = e.touches[0].clientY;
+    const diffY = touchY - dragStartY;
+
+    // Only respond to downward drag
+    if (diffY > 0) {
+      const dragPercentage = Math.min(diffY / 300, 0.8); // Max 80% opacity change
+      isDragging.style.transform = `translateY(${diffY}px)`;
+      isDragging.style.opacity = `${1 - dragPercentage * 0.5}`; // Fade out as dragged
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', (e) => {
+    if (!isDragging || !dragStartY) return;
+
+    const touchY = e.changedTouches[0].clientY;
+    const diffY = touchY - dragStartY;
+
+    // If dragged down more than 100px, close the panel
+    if (diffY > 100) {
+      isDragging.classList.remove('open');
+    }
+
+    // Reset panel position and style
+    isDragging.style.transform = '';
+    isDragging.style.opacity = '';
+    isDragging.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+
+    dragStartY = null;
+    isDragging = null;
+  }, { passive: true });
+
   // Kick off app init after all scripts are ready
   if (typeof initApp === 'function') initApp();
 });
